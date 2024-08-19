@@ -8,6 +8,7 @@ const app = express();
 app.use(cors())
 app.use(bodyParser.json());
 
+// Setting up Postgres connection
 const pool = new Pool({
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
@@ -16,10 +17,7 @@ const pool = new Pool({
     database: process.env.DB_NAME,
 })
 
-app.get('/', (req, res) => {
-    res.send('Hello World!');
-});
-
+// Registering user
 app.post("/register", async (req, res) => {
     const { name, email, password } = req.body;
     console.log({ name });
@@ -43,6 +41,7 @@ app.post("/register", async (req, res) => {
     }
 });
 
+// User login functionality
 app.post("/login", async (req, res) => {
     const { email, password } = req.body;
     console.log({ email });
@@ -62,6 +61,7 @@ app.post("/login", async (req, res) => {
     }
 });
 
+// Fetch list of all Users
 app.get("/users", async (req, res) => {
     try {
         const getUsers = await pool.query("SELECT id, fullname, email, created_date, last_updated FROM user_details");
@@ -78,6 +78,7 @@ app.get("/users", async (req, res) => {
     }
 })
 
+// Fetch User by id
 app.get("/users/id/:id", async (req, res) => {
     const userId = parseInt(req.params.id, 10)
     try {
@@ -95,6 +96,25 @@ app.get("/users/id/:id", async (req, res) => {
     }
 })
 
+// Fetch User by email
+app.get("/users/email/:email", async (req, res) => {
+    const email = req.params.email
+    try {
+        const getUsers = await pool.query("SELECT id, fullname, email, created_date, last_updated FROM user_details where email=$1", [email]);
+        if (getUsers.rows.length == 0) {
+            return res.status(200).json({ message: "No records found" })
+        }
+        else {
+            return res.status(200).json(getUsers.rows[0]);
+        }
+    }
+    catch (error) {
+        console.log('Error Fetching User by email: ', error);
+        res.status(500).json({ error: 'An error occured while Fetching User by email' });
+    }
+})
+
+// Update User
 app.put("/users/id/:id", async (req, res) => {
     const userId = parseInt(req.params.id, 10)
     const { fullname, email } = req.body;
@@ -122,6 +142,7 @@ app.put("/users/id/:id", async (req, res) => {
     }
 })
 
+// Delete User
 app.delete("/users/id/:id", async (req, res) => {
     const userId = parseInt(req.params.id, 10)
 
@@ -146,23 +167,7 @@ app.delete("/users/id/:id", async (req, res) => {
     }
 })
 
-app.get("/users/email/:email", async (req, res) => {
-    const email = req.params.email
-    try {
-        const getUsers = await pool.query("SELECT id, fullname, email, created_date, last_updated FROM user_details where email=$1", [email]);
-        if (getUsers.rows.length == 0) {
-            return res.status(200).json({ message: "No records found" })
-        }
-        else {
-            return res.status(200).json(getUsers.rows[0]);
-        }
-    }
-    catch (error) {
-        console.log('Error Fetching User by email: ', error);
-        res.status(500).json({ error: 'An error occured while Fetching User by email' });
-    }
-})
-
+// Add document
 app.post("/documents", async (req, res) => {
     const { user_id, filelabel, filename } = req.body;
     console.log({ user_id });
@@ -179,6 +184,7 @@ app.post("/documents", async (req, res) => {
     }
 })
 
+// Fetch list of documents
 app.get("/documents", async (req, res) => {
     try {
         const getDocuments = await pool.query("SELECT * FROM documents");
@@ -195,7 +201,7 @@ app.get("/documents", async (req, res) => {
     }
 })
 
-
+// Fetch document by id
 app.get("/documents/id/:id", async (req, res) => {
     const documentId = parseInt(req.params.id, 10)
 
@@ -213,6 +219,7 @@ app.get("/documents/id/:id", async (req, res) => {
     }
 })
 
+// Delete document
 app.delete("/documents/id/:id", async (req, res) => {
     const documentId = parseInt(req.params.id, 10)
 
@@ -236,6 +243,7 @@ app.delete("/documents/id/:id", async (req, res) => {
     }
 })
 
+// Update document
 app.put("/documents/id/:id", async (req, res) => {
     const documentId = parseInt(req.params.id, 10);
     const { filelabel } = req.body;
@@ -260,7 +268,7 @@ app.put("/documents/id/:id", async (req, res) => {
     }
 })
 
-
+// Send chat message
 app.post("/chat/sendmessage", async (req, res) => {
     const { user_id, message } = req.body;
     try {
@@ -280,7 +288,7 @@ app.post("/chat/sendmessage", async (req, res) => {
     }
 })
 
-
+// Get list of all messages
 app.get("/chat/allmessages", async (req, res) => {
 
     try {
